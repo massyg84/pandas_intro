@@ -1,7 +1,10 @@
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-
+from sklearn.preprocessing import LabelEncoder
+from sklearn.preprocessing import OneHotEncoder
+from sklearn.compose import ColumnTransformer
+from sklearn.impute import SimpleImputer
 # carichiamo il dataset
 
 iris = pd.read_csv("/Users/tanialosole/Desktop/Repo_ML_Deeplearning/2 - Datasets e data preprocessing/data/iris.csv")
@@ -89,4 +92,75 @@ iris_nan["petal_length"].fillna(mean_petal_length, inplace= True)
 print(iris_nan["petal_length"].isnull().sum())
 
 iris.plot(x="sepal_length", y="sepal_width", kind="hexbin")
-plt.show()
+#plt.show()
+
+
+#ESERCITAZIONE MAGLIETTE
+
+shirts = pd.read_csv("/Users/tanialosole/Desktop/Repo_ML_Deeplearning/2 - Datasets e data preprocessing/data/shirts.csv"
+                     , index_col=0)
+print(shirts.head())
+
+#si va a creare un array dei valori all'inderno del dataset
+X = shirts.values
+print(X[:10])
+
+#creiamo un dizionario per ordinare i label delle taglie
+
+size_mapping = {"S": 0, "M": 1, "L": 2, "XL": 3}
+shirts["taglia"] = shirts["taglia"].map(size_mapping)
+print(shirts.head())
+
+#quando hai un array np
+
+
+fmap = np.vectorize(lambda t: size_mapping[t])
+X[:, 0] = fmap(X[:, 0])
+print(X[:5])
+
+#PER LA COLONNA COLORE che è nominale
+shirts_dummies = shirts.copy()
+shirts_dummies = pd.get_dummies(shirts, columns=["colore"])
+print(shirts.head())
+
+#OneHotEncoder per creare le variabili di comodo
+X = shirts.values
+ct = ColumnTransformer([("colore", OneHotEncoder(), [1])], remainder="passthrough")
+X = ct.fit_transform(X)
+print(X[:5])
+
+#QUANDO IN UN DATASET MANCANO DATI
+
+iris_nan = pd.read_csv("/Users/tanialosole/Desktop/Repo_ML_Deeplearning/2 - Datasets e data preprocessing/"
+                       "data/iris_nan.csv")
+Y = iris_nan["class"].values
+X = iris_nan.drop("class", axis=1).values
+print(iris_nan)
+#poco consigliato in quanto si andrebbero a perdere info
+iris_drop =iris_nan.dropna()
+print(iris_drop)
+iris_drop =iris_nan.dropna(axis=1)
+print(iris_drop)
+
+#IMPUTAZIONE VALORI MANCANTI CON MEDIE
+replace_with = iris_nan.mean()
+iris_imp = iris_nan.fillna(replace_with)
+print(iris_imp)
+
+#metodo con la mediana
+replace_with = iris_nan.median()
+iris_imp = iris_nan.fillna(replace_with)
+print("stampo la mediana", iris_imp)
+
+#metodo con la moda ovvero con l'elemento più frequente
+replace_with = iris_nan.mode().iloc[0]
+iris_imp = iris_nan.fillna(replace_with)
+print("stampo la moda", iris_imp)
+
+#con np
+imp = SimpleImputer(strategy="mean", missing_values=np.nan)
+X_imp = imp.fit_transform(X)
+print(X_imp)
+
+nan_count = np.count_nonzero(np.isnan(X_imp))
+print("Il dataset ha "+str(nan_count)+" valori mancanti")
